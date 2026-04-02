@@ -2,6 +2,8 @@
 
 一个偏安静、偏文字感的个人博客项目，前端使用原生 `HTML/CSS/JS`，后端使用原生 `Node.js`，数据持久化使用 `SQLite`。
 
+在线地址：[https://i.024678.xyz](https://i.024678.xyz)
+
 本博客前端代码 `1:1` 复刻自 [xiaogai.fun](https://xiaogai.fun)，并在此基础上补齐了本地后端、SQLite 持久化、CMS、Docker 部署和若干交互细节。
 
 ## 项目亮点

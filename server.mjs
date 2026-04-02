@@ -588,32 +588,36 @@ function handleRss(req, res) {
   const baseUrl = getBaseUrl(req);
   const siteSettings = getSiteSettings();
   const posts = statements.listPublishedPosts.all(50, 0).map(toApiPost);
+  const selfLink = `${baseUrl}/blogApi?action=getRss`;
+  const channelDescription = `${siteSettings.siteTitle}的个人博客，${siteSettings.siteBio || "记录有意思的事情。"}`;
   const items = posts.map((post) => {
     const link = `${baseUrl}/post.html?id=${encodeURIComponent(post.id)}`;
     const description = escapeXml(post.excerpt || excerptFromContent(post.content || ""));
     return [
-      "<item>",
-      `<title>${escapeXml(post.title)}</title>`,
-      `<link>${escapeXml(link)}</link>`,
-      `<guid>${escapeXml(link)}</guid>`,
-      `<pubDate>${toRfc822(post.publishedAt || post.updatedAt)}</pubDate>`,
-      `<description>${description}</description>`,
-      "</item>"
-    ].join("");
-  }).join("");
+      "    <item>",
+      `      <title>${escapeXml(post.title)}</title>`,
+      `      <link>${escapeXml(link)}</link>`,
+      `      <guid isPermaLink="true">${escapeXml(link)}</guid>`,
+      `      <pubDate>${toRfc822(post.publishedAt || post.updatedAt)}</pubDate>`,
+      `      <description>${description}</description>`,
+      "    </item>"
+    ].join("\n");
+  }).join("\n");
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    "<rss version=\"2.0\">",
-    "<channel>",
-    `<title>${escapeXml(siteSettings.siteTitle)}</title>`,
-    `<link>${escapeXml(baseUrl)}</link>`,
-    `<description>${escapeXml(siteSettings.siteTitle)} RSS</description>`,
-    `<lastBuildDate>${toRfc822(posts[0]?.updatedAt || posts[0]?.publishedAt || nowShanghaiIso())}</lastBuildDate>`,
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    "  <channel>",
+    `    <title>${escapeXml(siteSettings.siteTitle)}</title>`,
+    `    <link>${escapeXml(baseUrl)}</link>`,
+    `    <description>${escapeXml(channelDescription)}</description>`,
+    "    <language>zh-CN</language>",
+    `    <lastBuildDate>${toRfc822(posts[0]?.updatedAt || posts[0]?.publishedAt || nowShanghaiIso())}</lastBuildDate>`,
+    `    <atom:link href="${escapeXml(selfLink)}" rel="self" type="application/rss+xml"/>`,
     items,
-    "</channel>",
+    "  </channel>",
     "</rss>"
-  ].join("");
+  ].filter(Boolean).join("\n");
 
   res.writeHead(200, {
     "Content-Type": "application/rss+xml; charset=utf-8",
