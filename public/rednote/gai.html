@@ -548,7 +548,7 @@
                 <div class="preview-container">
                     <div class="preview-content" id="previewContent">
                         <div class="header">
-                            <div class="avatar" id="avatarContainer"><img id="avatarImg" src="./img/xg.jpg"></div>
+                            <div class="avatar" id="avatarContainer"><img id="avatarImg" src="./img/xg.jpg?v=202604021922"></div>
                             <div class="info">
                                 <div class="name" id="rednoteNickname">why me</div>
                                 <div class="date" id="dateDisplay"></div>
@@ -630,7 +630,7 @@
         const rednoteProfileStorageKey = 'xiaogai-rednote-profile';
         const rednoteDefaultProfile = {
             nickname: 'why me',
-            avatarSrc: './img/xg.jpg'
+            avatarSrc: './img/xg.jpg?v=202604021922'
         };
         let rednoteProfileMemory = null;
 
@@ -677,7 +677,7 @@
             if (rednoteProfileMemory) {
                 return {
                     nickname: String(rednoteProfileMemory.nickname || '').trim() || rednoteDefaultProfile.nickname,
-                    avatarSrc: String(rednoteProfileMemory.avatarSrc || '').trim() || rednoteDefaultProfile.avatarSrc
+                    avatarSrc: normalizeStoredAvatarSrc(rednoteProfileMemory.avatarSrc)
                 };
             }
 
@@ -686,11 +686,19 @@
                 const nickname = String(parsed.nickname || '').trim();
                 return {
                     nickname: !nickname || nickname === '\u5c0f\u76d6' ? rednoteDefaultProfile.nickname : nickname,
-                    avatarSrc: String(parsed.avatarSrc || '').trim() || rednoteDefaultProfile.avatarSrc
+                    avatarSrc: normalizeStoredAvatarSrc(parsed.avatarSrc)
                 };
             } catch (error) {
                 return { ...rednoteDefaultProfile };
             }
+        }
+
+        function normalizeStoredAvatarSrc(value) {
+            const avatarSrc = String(value || '').trim();
+            if (!avatarSrc || avatarSrc.indexOf('./img/xg.jpg') === 0) {
+                return rednoteDefaultProfile.avatarSrc;
+            }
+            return avatarSrc;
         }
 
         function saveRednoteProfile(profile) {
