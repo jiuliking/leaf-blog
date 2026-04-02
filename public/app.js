@@ -2,6 +2,7 @@
   var config = window.XIAOGAI_CLOUDBASE_CONFIG || {};
   var page = document.body.getAttribute("data-page");
   var adminStorageKey = config.adminStorageKey || "xiaogai-admin-token";
+  var siteSettingsStorageKey = config.siteSettingsStorageKey || "xiaogai-site-settings";
   var appInstance = null;
   var authInstance = null;
   var useFallback = false;
@@ -221,6 +222,22 @@
     };
   }
 
+  function readCachedSiteSettings() {
+    try {
+      var raw = localStorage.getItem(siteSettingsStorageKey);
+      if (!raw) return null;
+      return normalizeSiteSettings(JSON.parse(raw));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function persistSiteSettingsCache(settings) {
+    try {
+      localStorage.setItem(siteSettingsStorageKey, JSON.stringify(normalizeSiteSettings(settings)));
+    } catch (error) {}
+  }
+
   function getCurrentSiteSettings() {
     return normalizeSiteSettings(currentSiteSettings);
   }
@@ -272,6 +289,7 @@
 
   function applyGlobalSiteSettings(settings) {
     currentSiteSettings = normalizeSiteSettings(settings);
+    persistSiteSettingsCache(currentSiteSettings);
 
     if (page === "home") {
       document.title = currentSiteSettings.browserTitle;
@@ -1578,6 +1596,10 @@
   }
 
   async function init() {
+    var cachedSiteSettings = readCachedSiteSettings();
+    if (cachedSiteSettings) {
+      applyGlobalSiteSettings(cachedSiteSettings);
+    }
     applyGlobalSiteSettings(await loadSiteSettings());
     if (page !== "admin") {
       ensureModeControl();

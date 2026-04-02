@@ -671,6 +671,27 @@ async function serveFile(res, filePath, rootDir, method) {
   }
 
   const contentType = getContentType(finalPath);
+
+  if (contentType.startsWith("text/html")) {
+    const html = await fsp.readFile(finalPath, "utf8");
+    const body = applySiteSettingsToHtml(finalPath, html, getSiteSettings());
+    const buffer = Buffer.from(body, "utf8");
+
+    res.writeHead(200, {
+      "Content-Type": contentType,
+      "Content-Length": buffer.length,
+      "Cache-Control": "public, max-age=300"
+    });
+
+    if (method === "HEAD") {
+      res.end();
+      return;
+    }
+
+    res.end(buffer);
+    return;
+  }
+
   res.writeHead(200, {
     "Content-Type": contentType,
     "Content-Length": stat.size,
@@ -692,6 +713,26 @@ function sendJson(res, status, payload) {
     "Content-Length": Buffer.byteLength(body)
   });
   res.end(body);
+}
+
+function applySiteSettingsToHtml(filePath, html, siteSettings) {
+  const basename = path.basename(filePath).toLowerCase();
+  const settings = sanitizeSiteSettings(siteSettings);
+  const browserTitle = escapeXml(settings.browserTitle);
+
+  if (basename === "index.html") {
+    return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${browserTitle}</title>`);
+  }
+
+  if (basename === "post.html") {
+    return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>文章 | ${browserTitle}</title>`);
+  }
+
+  if (basename === "admin.html") {
+    return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>CMS | ${browserTitle}</title>`);
+  }
+
+  return html;
 }
 
 function toApiPost(row) {
