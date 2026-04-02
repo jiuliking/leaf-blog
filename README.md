@@ -1,4 +1,4 @@
-# why me blog
+# leaf blog
 
 一个偏安静、偏文字感的个人博客项目，前端使用原生 `HTML/CSS/JS`，后端使用原生 `Node.js`，数据持久化使用 `SQLite`。
 
@@ -62,10 +62,10 @@ http://localhost:3000
 示例：
 
 ```bash
-BLOG_ADMIN_PASSWORD=whyme SITE_URL=https://your-domain.com npm start
+BLOG_ADMIN_PASSWORD=leaf SITE_URL=https://your-domain.com npm start
 ```
 
-默认后台密码示例是 `whyme`，正式部署前建议自行修改。
+默认后台密码示例是 `leaf`，正式部署前建议自行修改。
 
 ## Docker Compose
 
@@ -108,7 +108,7 @@ docker compose down
 ## 部署建议
 
 1. 服务器安装 Docker 和 Docker Compose。
-2. 把项目上传到服务器，例如 `/opt/why-me-blog`。
+2. 把项目上传到服务器，例如 `/opt/leaf-blog`。
 3. 复制 `.env.example` 为 `.env`，修改站点地址和后台密码。
 4. 执行 `docker compose up -d --build`。
 5. 使用 `Nginx` 或 `Caddy` 反向代理到容器端口，并配置 HTTPS。

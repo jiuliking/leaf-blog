@@ -8,7 +8,7 @@ import Database from "better-sqlite3";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = clampInt(process.env.PORT, 3000, 1, 65535);
-const ADMIN_PASSWORD = process.env.BLOG_ADMIN_PASSWORD || "whyme";
+const ADMIN_PASSWORD = process.env.BLOG_ADMIN_PASSWORD || "leaf";
 const SITE_URL = String(process.env.SITE_URL || "").trim().replace(/\/+$/, "");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -22,9 +22,10 @@ const MAX_REQUEST_BODY = 26 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const SITE_SETTINGS_META_KEY = "site_settings_v1";
+const LEAF_BRAND_MIGRATION_META_KEY = "leaf_brand_migrated_v1";
 const DEFAULT_SITE_SETTINGS = Object.freeze({
-  siteTitle: "why me",
-  browserTitle: "why me",
+  siteTitle: "leaf",
+  browserTitle: "leaf",
   siteBio: "做有意思的事情。",
   xiaohongshuUrl: "https://www.xiaohongshu.com/user/profile/6720c690000000001c01b883?xsec_token=ABRs9q5J79rkqZIGS1vjAYLPMItpArQTzpcWQTTo1KZvU=&xsec_source=pc_feed",
   emailAddress: "gainubi@gmail.com"
@@ -38,6 +39,7 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 const db = createDatabase();
 const statements = createStatements(db);
 runLegacyMigration();
+runLeafBrandMigration();
 
 const server = http.createServer((req, res) => {
   handleRequest(req, res).catch((error) => {
@@ -50,7 +52,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`why me blog listening on http://localhost:${PORT}`);
+  console.log(`leaf blog listening on http://localhost:${PORT}`);
   console.log(`SQLite database: ${SQLITE_FILE}`);
 });
 
@@ -190,6 +192,11 @@ function createStatements(database) {
       LIMIT 1
     `),
     updateCommentStatus: database.prepare("UPDATE comments SET status = ? WHERE id = ?"),
+    renameAuthorComments: database.prepare(`
+      UPDATE comments
+      SET author = @nextAuthor
+      WHERE author_role = 'author' AND author = @previousAuthor
+    `),
     deleteCommentTree: database.prepare(`
       WITH RECURSIVE subtree(id) AS (
         SELECT id FROM comments WHERE id = ?
@@ -241,6 +248,40 @@ function runLegacyMigration() {
     }
 
     statements.setMeta.run("legacy_json_migrated_v1", "1");
+  });
+
+  migrationTx();
+}
+
+function runLeafBrandMigration() {
+  const migrated = statements.getMeta.get(LEAF_BRAND_MIGRATION_META_KEY);
+  if (migrated && migrated.value === "1") return;
+
+  const migrationTx = db.transaction(() => {
+    const currentSettings = getSiteSettings();
+    const nextSettings = { ...currentSettings };
+    let hasChanges = false;
+
+    if (nextSettings.siteTitle === "why me") {
+      nextSettings.siteTitle = "leaf";
+      hasChanges = true;
+    }
+
+    if (nextSettings.browserTitle === "why me") {
+      nextSettings.browserTitle = "leaf";
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      statements.setMeta.run(SITE_SETTINGS_META_KEY, JSON.stringify(sanitizeSiteSettings(nextSettings)));
+    }
+
+    statements.renameAuthorComments.run({
+      previousAuthor: "why me",
+      nextAuthor: "leaf"
+    });
+
+    statements.setMeta.run(LEAF_BRAND_MIGRATION_META_KEY, "1");
   });
 
   migrationTx();
@@ -412,7 +453,7 @@ function apiCreateComment(payload) {
     }
   }
 
-  const author = adminSession ? "why me" : (String(payload.author || "").trim() || "匿名");
+  const author = adminSession ? "leaf" : (String(payload.author || "").trim() || "匿名");
   const authorRole = adminSession ? "author" : "guest";
   const comment = {
     id: randomId(),
@@ -809,7 +850,7 @@ function normalizeCommentRecord(raw, postLookup) {
     post_slug: String(raw.postSlug || raw.post_slug || post?.slug || "").trim(),
     post_title: String(raw.postTitle || raw.post_title || post?.title || "").trim(),
     parent_id: String(raw.parentId || raw.parent_id || "").trim() || null,
-    author: String(raw.author || "").trim() || (isAuthor ? "why me" : "匿名"),
+    author: String(raw.author || "").trim() || (isAuthor ? "leaf" : "匿名"),
     author_role: authorRole,
     is_author: isAuthor,
     content,

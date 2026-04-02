@@ -7,8 +7,8 @@
   var authInstance = null;
   var useFallback = false;
   var DEFAULT_SITE_SETTINGS = {
-    siteTitle: "why me",
-    browserTitle: "why me",
+    siteTitle: "leaf",
+    browserTitle: "leaf",
     siteBio: "做有意思的事情。",
     xiaohongshuUrl: "https://www.xiaohongshu.com/user/profile/6720c690000000001c01b883?xsec_token=ABRs9q5J79rkqZIGS1vjAYLPMItpArQTzpcWQTTo1KZvU=&xsec_source=pc_feed",
     emailAddress: "gainubi@gmail.com"
@@ -1243,7 +1243,7 @@
           '    <button class="button button-danger" type="button" data-admin-comment-delete="' + escapeHtml(comment.id) + '">删除</button>',
           "  </div>",
           '  <form class="comment-reply-form hidden" data-admin-reply-form="' + escapeHtml(comment.id) + '">',
-          '    <div class="field-row"><label class="field-label" for="admin-reply-content-' + escapeHtml(comment.id) + '">回复内容</label><textarea id="admin-reply-content-' + escapeHtml(comment.id) + '" name="content" rows="4" maxlength="600" placeholder="以 why me 身份回复"></textarea></div>',
+          '    <div class="field-row"><label class="field-label" for="admin-reply-content-' + escapeHtml(comment.id) + '">回复内容</label><textarea id="admin-reply-content-' + escapeHtml(comment.id) + '" name="content" rows="4" maxlength="600" placeholder="以 leaf 身份回复"></textarea></div>',
           '    <div class="comment-reply-actions"><button class="button" type="submit">发布回复</button><button class="button button-ghost" type="button" data-admin-reply-cancel="' + escapeHtml(comment.id) + '">取消</button></div>',
           '    <div class="feedback"></div>',
           "  </form>",
