@@ -677,7 +677,7 @@
             if (rednoteProfileMemory) {
                 return {
                     nickname: String(rednoteProfileMemory.nickname || '').trim() || rednoteDefaultProfile.nickname,
-                    avatarSrc: normalizeStoredAvatarSrc(rednoteProfileMemory.avatarSrc)
+                    avatarSrc: String(rednoteProfileMemory.avatarSrc || '').trim() || rednoteDefaultProfile.avatarSrc
                 };
             }
 
@@ -686,19 +686,11 @@
                 const nickname = String(parsed.nickname || '').trim();
                 return {
                     nickname: !nickname || nickname === '\u5c0f\u76d6' ? rednoteDefaultProfile.nickname : nickname,
-                    avatarSrc: normalizeStoredAvatarSrc(parsed.avatarSrc)
+                    avatarSrc: String(parsed.avatarSrc || '').trim() || rednoteDefaultProfile.avatarSrc
                 };
             } catch (error) {
                 return { ...rednoteDefaultProfile };
             }
-        }
-
-        function normalizeStoredAvatarSrc(value) {
-            const avatarSrc = String(value || '').trim();
-            if (!avatarSrc || avatarSrc.indexOf('./img/doro.jpg') === 0 || avatarSrc.indexOf('./img/xg.jpg') === 0) {
-                return rednoteDefaultProfile.avatarSrc;
-            }
-            return avatarSrc;
         }
 
         function saveRednoteProfile(profile) {
