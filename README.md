@@ -33,8 +33,6 @@
 - 文章、评论、站点设置：`data/blog.sqlite`
 - 上传图片：`data/uploads/`
 
-如果 `data/` 目录中存在旧版 `posts.json` 或 `comments.json`，首次启动时会自动迁移到 `SQLite`。
-
 ## 本地启动
 
 ```bash

@@ -15,14 +15,11 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const SQLITE_FILE = path.join(DATA_DIR, "blog.sqlite");
-const LEGACY_POSTS_FILE = path.join(DATA_DIR, "posts.json");
-const LEGACY_COMMENTS_FILE = path.join(DATA_DIR, "comments.json");
 
 const MAX_REQUEST_BODY = 26 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const SITE_SETTINGS_META_KEY = "site_settings_v1";
-const LEAF_BRAND_MIGRATION_META_KEY = "leaf_brand_migrated_v1";
 const DEFAULT_SITE_SETTINGS = Object.freeze({
   siteTitle: "leaf",
   browserTitle: "leaf",
@@ -38,8 +35,6 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const db = createDatabase();
 const statements = createStatements(db);
-runLegacyMigration();
-runLeafBrandMigration();
 
 const server = http.createServer((req, res) => {
   handleRequest(req, res).catch((error) => {
@@ -127,10 +122,6 @@ function createStatements(database) {
         published_at = excluded.published_at,
         updated_at = excluded.updated_at
     `),
-    insertPostIgnore: database.prepare(`
-      INSERT OR IGNORE INTO posts (id, slug, title, excerpt, content, status, published_at, updated_at)
-      VALUES (@id, @slug, @title, @excerpt, @content, @status, @published_at, @updated_at)
-    `),
     selectAllPosts: database.prepare(`
       SELECT id, slug, title, excerpt, content, status, published_at, updated_at
       FROM posts
@@ -166,13 +157,6 @@ function createStatements(database) {
         @id, @post_id, @post_slug, @post_title, @parent_id, @author, @author_role, @is_author, @content, @created_at, @status
       )
     `),
-    insertCommentIgnore: database.prepare(`
-      INSERT OR IGNORE INTO comments (
-        id, post_id, post_slug, post_title, parent_id, author, author_role, is_author, content, created_at, status
-      ) VALUES (
-        @id, @post_id, @post_slug, @post_title, @parent_id, @author, @author_role, @is_author, @content, @created_at, @status
-      )
-    `),
     listPostComments: database.prepare(`
       SELECT id, post_id, post_slug, post_title, parent_id, author, author_role, is_author, content, created_at, status
       FROM comments
@@ -192,11 +176,6 @@ function createStatements(database) {
       LIMIT 1
     `),
     updateCommentStatus: database.prepare("UPDATE comments SET status = ? WHERE id = ?"),
-    renameAuthorComments: database.prepare(`
-      UPDATE comments
-      SET author = @nextAuthor
-      WHERE author_role = 'author' AND author = @previousAuthor
-    `),
     deleteCommentTree: database.prepare(`
       WITH RECURSIVE subtree(id) AS (
         SELECT id FROM comments WHERE id = ?
@@ -209,82 +188,6 @@ function createStatements(database) {
       WHERE id IN (SELECT id FROM subtree)
     `)
   };
-}
-
-function runLegacyMigration() {
-  const migrated = statements.getMeta.get("legacy_json_migrated_v1");
-  if (migrated && migrated.value === "1") return;
-
-  const existingPosts = Number(statements.countPosts.get().count || 0);
-  const existingComments = Number(statements.countComments.get().count || 0);
-
-  const legacyPosts = readJsonArray(LEGACY_POSTS_FILE);
-  const legacyComments = readJsonArray(LEGACY_COMMENTS_FILE);
-  const normalizedPosts = legacyPosts.map(normalizePostRecord).filter(Boolean);
-
-  const migrationTx = db.transaction(() => {
-    if (existingPosts === 0) {
-      for (const post of normalizedPosts) {
-        statements.insertPostIgnore.run(post);
-      }
-    }
-
-    const postLookup = new Map();
-    for (const row of statements.selectAllPosts.all()) {
-      const post = toApiPost(row);
-      postLookup.set(post.id, post);
-      if (!postLookup.has(post.slug)) {
-        postLookup.set(post.slug, post);
-      }
-    }
-
-    if (existingComments === 0) {
-      for (const rawComment of legacyComments) {
-        const comment = normalizeCommentRecord(rawComment, postLookup);
-        if (!comment) continue;
-        if (!postLookup.has(comment.post_id)) continue;
-        statements.insertCommentIgnore.run(comment);
-      }
-    }
-
-    statements.setMeta.run("legacy_json_migrated_v1", "1");
-  });
-
-  migrationTx();
-}
-
-function runLeafBrandMigration() {
-  const migrated = statements.getMeta.get(LEAF_BRAND_MIGRATION_META_KEY);
-  if (migrated && migrated.value === "1") return;
-
-  const migrationTx = db.transaction(() => {
-    const currentSettings = getSiteSettings();
-    const nextSettings = { ...currentSettings };
-    let hasChanges = false;
-
-    if (nextSettings.siteTitle === "why me") {
-      nextSettings.siteTitle = "leaf";
-      hasChanges = true;
-    }
-
-    if (nextSettings.browserTitle === "why me") {
-      nextSettings.browserTitle = "leaf";
-      hasChanges = true;
-    }
-
-    if (hasChanges) {
-      statements.setMeta.run(SITE_SETTINGS_META_KEY, JSON.stringify(sanitizeSiteSettings(nextSettings)));
-    }
-
-    statements.renameAuthorComments.run({
-      previousAuthor: "why me",
-      nextAuthor: "leaf"
-    });
-
-    statements.setMeta.run(LEAF_BRAND_MIGRATION_META_KEY, "1");
-  });
-
-  migrationTx();
 }
 
 async function handleRequest(req, res) {
@@ -927,19 +830,6 @@ function safeCompare(left, right) {
   const b = Buffer.from(String(right || ""));
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
-}
-
-function readJsonArray(filePath) {
-  try {
-    if (!fs.existsSync(filePath)) return [];
-    const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "").trim();
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn(`Failed to read JSON array from ${filePath}:`, error.message);
-    return [];
-  }
 }
 
 function randomId(bytes = 16) {
