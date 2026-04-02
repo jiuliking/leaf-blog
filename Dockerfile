@@ -8,7 +8,7 @@ RUN npm ci --omit=dev
 
 COPY server.mjs ./
 COPY public ./public
-COPY data ./data
+RUN mkdir -p /app/data/uploads
 
 EXPOSE 3000
 
