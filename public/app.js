@@ -370,15 +370,107 @@
     var currentMode = getPersistedMode() || "sunny";
     var modeLabel = document.getElementById("mode-label");
     var modeOrder = ["night", "day", "sunny"];
+    var video = document.getElementById("leaves-overlay");
+    var audio = document.getElementById("forest-audio");
+    var audioUnlocked = false;
+    var fadeFrame = 0;
+    var audioBaseVolume = 0.36;
 
-    function stopSummerMedia() {
-      var video = document.getElementById("leaves-overlay");
-      var audio = document.getElementById("forest-audio");
-      if (video) video.pause();
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
+    function cancelAudioFade() {
+      if (!fadeFrame) return;
+      cancelAnimationFrame(fadeFrame);
+      fadeFrame = 0;
+    }
+
+    function fadeAudioTo(targetVolume, duration, onDone) {
+      if (!audio) {
+        if (typeof onDone === "function") onDone();
+        return;
       }
+
+      cancelAudioFade();
+
+      var startVolume = Number.isFinite(audio.volume) ? audio.volume : audioBaseVolume;
+      var nextVolume = Math.max(0, Math.min(1, targetVolume));
+      var startTime = 0;
+
+      function tick(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min(1, (timestamp - startTime) / Math.max(duration || 1, 1));
+        audio.volume = startVolume + (nextVolume - startVolume) * progress;
+        if (progress < 1) {
+          fadeFrame = requestAnimationFrame(tick);
+          return;
+        }
+        fadeFrame = 0;
+        if (typeof onDone === "function") onDone();
+      }
+
+      if (duration <= 0) {
+        audio.volume = nextVolume;
+        if (typeof onDone === "function") onDone();
+        return;
+      }
+
+      fadeFrame = requestAnimationFrame(tick);
+    }
+
+    function stopSummerMedia(options) {
+      options = options || {};
+      var resetPlayback = options.resetPlayback !== false;
+      var resetVideo = options.resetVideo !== false;
+      var fadeDuration = options.fadeDuration == null ? 280 : options.fadeDuration;
+
+      if (video) {
+        video.pause();
+        if (resetVideo) {
+          try {
+            video.currentTime = 0;
+          } catch (error) {}
+        }
+      }
+
+      if (!audio) return;
+
+      function finalizeStop() {
+        audio.pause();
+        if (resetPlayback) {
+          try {
+            audio.currentTime = 0;
+          } catch (error) {}
+        }
+        audio.volume = audioBaseVolume;
+      }
+
+      if (!audio.paused && audio.volume > 0.01) {
+        fadeAudioTo(0, fadeDuration, finalizeStop);
+        return;
+      }
+
+      finalizeStop();
+    }
+
+    function maybePlaySummerMedia() {
+      if (currentMode !== "sunny" || document.hidden) return;
+
+      if (video) {
+        video.play().catch(function () {});
+      }
+
+      if (!audio || !audioUnlocked) return;
+
+      if (!audio.paused) {
+        fadeAudioTo(audioBaseVolume, 180);
+        return;
+      }
+
+      cancelAudioFade();
+      audio.volume = 0;
+      audio.play()
+        .then(function () {
+          fadeAudioTo(audioBaseVolume, 320);
+        })
+        .catch(function () {});
     }
 
     function setMode(mode) {
@@ -398,8 +490,7 @@
         document.body.classList.add("light", "sunny");
         document.getElementById("dot-sunny").classList.add("active");
         if (modeLabel) modeLabel.textContent = "sunny";
-        var video = document.getElementById("leaves-overlay");
-        if (video) video.play().catch(function () {});
+        maybePlaySummerMedia();
       } else {
         document.getElementById("dot-night").classList.add("active");
         if (modeLabel) modeLabel.textContent = "night";
@@ -420,6 +511,23 @@
       if (event.key === "d" || event.key === "D") setMode("day");
       if (event.key === "n" || event.key === "N") setMode("night");
       if (event.key === "s" || event.key === "S") setMode("sunny");
+    });
+
+    document.addEventListener("pointerdown", function () {
+      audioUnlocked = true;
+      if (currentMode === "sunny") {
+        maybePlaySummerMedia();
+      }
+    }, { once: true, passive: true });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        stopSummerMedia({ resetPlayback: false, resetVideo: false, fadeDuration: 180 });
+        return;
+      }
+      if (currentMode === "sunny") {
+        maybePlaySummerMedia();
+      }
     });
 
     document.querySelectorAll(".logo-letter").forEach(function (el) {
