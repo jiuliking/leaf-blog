@@ -943,12 +943,22 @@ function excerptFromContent(content) {
   if (!candidate) return "";
 
   const maxLength = 110;
-  const sentenceMarks = ["。", "！", "？", ".", "!", "?"];
+  const sentenceMarks = ["。", "！", "？", "!", "?"];
   const trailingMarks = ['"', "'", "”", "’", ")", "）", "]", "】"];
   let sentenceEnd = -1;
 
+  function isSentencePeriod(text, index) {
+    const prev = text.charAt(index - 1);
+    const next = text.charAt(index + 1);
+    if (text.charAt(index) !== ".") return false;
+    if (!prev || prev === "." || next === ".") return false;
+    if (next && !/[\s"'”’)\]】}]/.test(next)) return false;
+    return true;
+  }
+
   for (let i = 0; i < candidate.length; i += 1) {
-    if (!sentenceMarks.includes(candidate.charAt(i))) continue;
+    const char = candidate.charAt(i);
+    if (!sentenceMarks.includes(char) && !isSentencePeriod(candidate, i)) continue;
     sentenceEnd = i;
     while (sentenceEnd + 1 < candidate.length && trailingMarks.includes(candidate.charAt(sentenceEnd + 1))) {
       sentenceEnd += 1;
@@ -964,9 +974,15 @@ function excerptFromContent(content) {
   if (candidate.length <= maxLength) return candidate;
 
   let cutIndex = -1;
-  for (const mark of ["。", "！", "？", ".", "!", "?", "，", ",", "、", ";", "；", " "]) {
+  for (const mark of ["。", "！", "？", "!", "?", "，", ",", "、", ";", "；", " "]) {
     const index = candidate.lastIndexOf(mark, maxLength);
     if (index > cutIndex) cutIndex = index;
+  }
+
+  for (let periodIndex = candidate.lastIndexOf(".", maxLength); periodIndex >= 0; periodIndex = candidate.lastIndexOf(".", periodIndex - 1)) {
+    if (!isSentencePeriod(candidate, periodIndex)) continue;
+    if (periodIndex > cutIndex) cutIndex = periodIndex;
+    break;
   }
 
   if (cutIndex >= 24) {

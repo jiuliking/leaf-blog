@@ -142,12 +142,22 @@
     if (!candidate) return "";
 
     var maxLength = 110;
-    var sentenceMarks = ["。", "！", "？", ".", "!", "?"];
+    var sentenceMarks = ["。", "！", "？", "!", "?"];
     var trailingMarks = ['"', "'", "”", "’", ")", "）", "]", "】"];
     var sentenceEnd = -1;
 
+    function isSentencePeriod(text, index) {
+      var prev = text.charAt(index - 1);
+      var next = text.charAt(index + 1);
+      if (text.charAt(index) !== ".") return false;
+      if (!prev || prev === "." || next === ".") return false;
+      if (next && !/[\s"'”’)\]】}]/.test(next)) return false;
+      return true;
+    }
+
     for (var i = 0; i < candidate.length; i += 1) {
-      if (sentenceMarks.indexOf(candidate.charAt(i)) === -1) continue;
+      var char = candidate.charAt(i);
+      if (sentenceMarks.indexOf(char) === -1 && !isSentencePeriod(candidate, i)) continue;
       sentenceEnd = i;
       while (sentenceEnd + 1 < candidate.length && trailingMarks.indexOf(candidate.charAt(sentenceEnd + 1)) !== -1) {
         sentenceEnd += 1;
@@ -162,12 +172,18 @@
 
     if (candidate.length <= maxLength) return candidate;
 
-    var breakpoints = ["。", "！", "？", ".", "!", "?", "，", ",", "、", ";", "；", " "];
     var cutIndex = -1;
+    var breakpoints = ["。", "！", "？", "!", "?", "，", ",", "、", ";", "；", " "];
     breakpoints.forEach(function (mark) {
       var index = candidate.lastIndexOf(mark, maxLength);
       if (index > cutIndex) cutIndex = index;
     });
+
+    for (var periodIndex = candidate.lastIndexOf(".", maxLength); periodIndex >= 0; periodIndex = candidate.lastIndexOf(".", periodIndex - 1)) {
+      if (!isSentencePeriod(candidate, periodIndex)) continue;
+      if (periodIndex > cutIndex) cutIndex = periodIndex;
+      break;
+    }
 
     if (cutIndex >= 24) {
       return candidate.slice(0, cutIndex + (candidate[cutIndex] === " " ? 0 : 1)).trim();
