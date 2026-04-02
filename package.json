@@ -1,0 +1,13 @@
+{
+  "name": "why-me-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  }
+}

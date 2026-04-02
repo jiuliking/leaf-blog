@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章 | why me</title>
+  <meta name="description" content="why me 的文章详情页。">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css?v=202604021930">
+</head>
+<body data-page="post">
+  <script>(function(){var m=localStorage.getItem('xiaogai-display-mode');if(m==='day'){document.body.className='light';}else if(m==='sunny'||!m){document.body.className='light sunny';}/* night: no class needed */})();</script>
+  <div class="noise"></div>
+  <video id="leaves-overlay" src="./leaves.mp4" loop muted playsinline preload="none"></video>
+  <audio id="forest-audio" src="./forest.mp3" loop preload="none"></audio>
+  <div class="sun-glow"></div>
+  <div class="light-shaft light-shaft-1"></div>
+  <div class="light-shaft light-shaft-2"></div>
+  <div class="light-shaft light-shaft-3"></div>
+
+  <div class="mode-indicator">
+    <span id="mode-label">sunny</span>
+    <div class="mode-dot" id="dot-night"></div>
+    <div class="mode-dot" id="dot-day"></div>
+    <div class="mode-dot" id="dot-sunny"></div>
+  </div>
+
+  <main class="page page-narrow">
+    <section class="hero hero-compact">
+      <div class="section-head">
+        <a class="subtle-link" href="./index.html">返回首页</a>
+        <a id="post-edit-link" class="subtle-link hidden" href="./admin.html">编辑文章</a>
+      </div>
+    </section>
+
+    <article id="post-view" class="post-shell hidden">
+      <header class="post-header">
+        <div class="section-title">Article</div>
+        <h1 id="post-title" class="post-title"></h1>
+        <div id="post-meta" class="post-meta"></div>
+      </header>
+      <div id="post-content" class="post-content"></div>
+    </article>
+
+    <div id="post-empty" class="empty-state hidden">没有找到这篇文章，可能已经被删除或还未发布。</div>
+
+    <div class="divider"></div>
+
+    <section class="section">
+      <div class="section-title">留言</div>
+      <div id="comments-list" class="comments-list"></div>
+      <div id="comments-empty" class="empty-state hidden">还没有公开留言。你可以做第一个。</div>
+
+      <form id="comment-form" class="comment-form panel panel-soft">
+        <div class="field-row">
+          <label class="field-label" for="comment-author">名字</label>
+          <input id="comment-author" name="author" maxlength="24" placeholder="怎么称呼你">
+        </div>
+        <div class="field-row">
+          <label class="field-label" for="comment-content">内容</label>
+          <textarea id="comment-content" name="content" rows="5" maxlength="600" placeholder="想说点什么"></textarea>
+        </div>
+        <button class="button" type="submit">提交留言</button>
+        <div id="comment-feedback" class="feedback"></div>
+      </form>
+    </section>
+  </main>
+
+  <div class="shortcuts-hint">
+    <kbd>D</kbd> day &nbsp; <kbd>N</kbd> night &nbsp; <kbd>S</kbd> sunny
+  </div>
+
+  <script src="./cloudbase-config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

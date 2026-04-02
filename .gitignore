@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/blog.sqlite
+data/blog.sqlite-*
+data/uploads/
+.tmp-server-*
+*.log

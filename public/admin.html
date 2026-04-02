@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMS | why me</title>
+  <meta name="description" content="why me 博客的后台内容管理。">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css?v=202604021930">
+</head>
+<body data-page="admin" class="light">
+  <main class="page page-wide admin-page">
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">CMS</div>
+          <h1 id="admin-brand-title" class="admin-title">why me 内容后台</h1>
+        </div>
+        <a class="subtle-link" href="./index.html">查看博客</a>
+      </div>
+    </section>
+
+    <section id="admin-login-shell" class="section admin-login-shell">
+      <div class="panel">
+        <div class="panel-title">管理员登录</div>
+        <form id="admin-login-form" class="stack-form">
+          <div class="field-row">
+            <label class="field-label" for="admin-password">后台口令</label>
+            <input id="admin-password" name="password" type="password" autocomplete="current-password" placeholder="Docker 部署时请在 .env 里修改 BLOG_ADMIN_PASSWORD">
+          </div>
+          <button class="button" type="submit">进入后台</button>
+          <div id="admin-login-feedback" class="feedback"></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="admin-shell" class="hidden admin-shell">
+      <div class="admin-nav">
+        <div class="admin-nav-tabs">
+          <button id="admin-view-comments" class="button button-ghost admin-nav-button is-active" type="button">留言列表</button>
+          <button id="admin-view-posts" class="button button-ghost admin-nav-button" type="button">文章列表</button>
+          <button id="admin-view-settings" class="button button-ghost admin-nav-button" type="button">站点设置</button>
+          <a id="admin-rednote-link" class="button button-ghost admin-nav-button" href="./rednote/gai.html">小红书生成</a>
+        </div>
+        <div class="admin-nav-actions">
+          <button id="new-post-button" class="button" type="button">新建文章</button>
+          <button id="logout-button" class="button button-ghost" type="button">退出</button>
+        </div>
+      </div>
+
+      <section id="admin-posts-view" class="admin-view hidden">
+        <div class="panel admin-list-panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              文章列表
+              <span id="admin-posts-count" class="admin-count-badge"></span>
+            </div>
+            <div class="section-title">按更新时间倒序</div>
+          </div>
+          <div class="admin-toolbar">
+            <input id="admin-post-search" type="search" placeholder="搜索标题、摘要、正文">
+            <select id="admin-post-sort" aria-label="文章排序方式">
+              <option value="updatedAt-desc">最近修改</option>
+              <option value="publishedAt-desc">最近发布</option>
+              <option value="title-asc">标题 A-Z</option>
+            </select>
+          </div>
+          <div id="admin-posts-summary" class="admin-summary"></div>
+          <div id="admin-posts-list" class="admin-list"></div>
+          <div id="admin-posts-pagination" class="admin-pagination"></div>
+        </div>
+      </section>
+
+      <section id="admin-comments-view" class="admin-view">
+        <div class="panel admin-comments-panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              留言列表
+              <span id="admin-comments-count" class="admin-count-badge"></span>
+            </div>
+            <div class="section-title">按时间倒序</div>
+          </div>
+          <div class="admin-toolbar admin-toolbar-comments">
+            <input id="admin-comment-search" type="search" placeholder="搜索留言人、内容、文章名">
+            <select id="admin-comment-post-filter" aria-label="按文章筛选留言">
+              <option value="all">全部文章</option>
+            </select>
+          </div>
+          <div id="admin-comments-summary" class="admin-summary"></div>
+          <div id="admin-comments-feedback" class="feedback"></div>
+          <div id="admin-comments-list" class="admin-list"></div>
+          <div id="admin-comments-pagination" class="admin-pagination"></div>
+        </div>
+      </section>
+
+      <section id="admin-settings-view" class="admin-view hidden">
+        <div class="panel admin-settings-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">站点设置</div>
+              <div class="section-title">修改首页标题、浏览器标题和 Connect 区链接</div>
+            </div>
+          </div>
+          <form id="site-settings-form" class="stack-form">
+            <div class="field-row">
+              <label class="field-label" for="setting-site-title">网站标题</label>
+              <input id="setting-site-title" name="siteTitle" maxlength="30" placeholder="例如：why me">
+            </div>
+            <div class="field-row">
+              <label class="field-label" for="setting-browser-title">浏览器标题</label>
+              <input id="setting-browser-title" name="browserTitle" maxlength="80" placeholder="例如：why me">
+            </div>
+            <div class="field-row">
+              <label class="field-label" for="setting-xiaohongshu-url">小红书链接</label>
+              <input id="setting-xiaohongshu-url" name="xiaohongshuUrl" maxlength="1000" placeholder="https://www.xiaohongshu.com/...">
+            </div>
+            <div class="field-row">
+              <label class="field-label" for="setting-email-address">邮箱地址</label>
+              <input id="setting-email-address" name="emailAddress" maxlength="320" placeholder="name@example.com">
+            </div>
+            <div class="panel panel-soft settings-preview-panel">
+              <div class="section-title">预览</div>
+              <div id="settings-preview-site-title" class="settings-preview-title">why me</div>
+              <div id="settings-preview-browser-title" class="settings-preview-meta">浏览器标签：why me</div>
+              <div id="settings-preview-rednote-link" class="settings-preview-meta">小红书：https://...</div>
+              <div id="settings-preview-email-link" class="settings-preview-meta">邮箱：name@example.com</div>
+            </div>
+            <div class="form-actions">
+              <button class="button" type="submit">保存设置</button>
+            </div>
+            <div id="site-settings-feedback" class="feedback"></div>
+          </form>
+        </div>
+      </section>
+
+      <section id="admin-editor-view" class="admin-view hidden">
+        <div class="panel admin-editor-panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title" id="post-form-title">新建文章</div>
+              <div class="section-title" id="post-form-subtitle">只需要填写标题和正文</div>
+            </div>
+            <button id="cancel-post-edit" class="button button-ghost" type="button">返回列表</button>
+          </div>
+          <form id="post-form" class="stack-form">
+            <input id="post-id" type="hidden" name="id">
+            <input id="post-slug" type="hidden" name="slug">
+            <input id="post-excerpt" type="hidden" name="excerpt">
+            <input id="post-published-at" type="hidden" name="publishedAt">
+            <div class="field-row">
+              <label class="field-label" for="post-title-input">标题</label>
+              <input id="post-title-input" name="title" maxlength="80" required>
+            </div>
+            <div class="field-row">
+              <label class="field-label" for="post-content-input">正文</label>
+              <div class="editor-toolbar">
+                <label class="editor-toolbar-btn" title="插入图片">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  插入图片
+                  <input id="image-upload-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none">
+                </label>
+                <span id="image-upload-status" class="editor-toolbar-status"></span>
+              </div>
+              <textarea id="post-content-input" name="content" rows="18" required placeholder="支持基础 Markdown。引用用 > 开头，空行分段。图片用 ![描述](url) 格式。"></textarea>
+            </div>
+            <div class="form-actions">
+              <button id="post-submit-button" class="button" type="submit">发布文章</button>
+            </div>
+            <div id="post-form-feedback" class="feedback"></div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="./cloudbase-config.js"></script>
+  <script src="./app.js"></script>
+
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <p id="confirm-modal-message" class="modal-message"></p>
+      <div class="modal-actions">
+        <button id="confirm-modal-cancel" class="button button-ghost" type="button">取消</button>
+        <button id="confirm-modal-ok" class="button button-danger" type="button">确定删除</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

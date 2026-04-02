@@ -1,0 +1,13 @@
+services:
+  myblog:
+    build: .
+    container_name: myblog
+    env_file:
+      - .env
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: "${PORT:-3000}"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
