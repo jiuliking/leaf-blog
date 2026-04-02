@@ -91,6 +91,7 @@ docker compose down
 后台可以直接修改这些内容：
 
 - 网站标题
+- 首页副标题
 - 浏览器标签标题
 - 首页 Connect 区的小红书链接
 - 首页 Connect 区的邮箱地址

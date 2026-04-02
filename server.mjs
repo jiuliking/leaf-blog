@@ -25,6 +25,7 @@ const SITE_SETTINGS_META_KEY = "site_settings_v1";
 const DEFAULT_SITE_SETTINGS = Object.freeze({
   siteTitle: "why me",
   browserTitle: "why me",
+  siteBio: "做有意思的事情。",
   xiaohongshuUrl: "https://www.xiaohongshu.com/user/profile/6720c690000000001c01b883?xsec_token=ABRs9q5J79rkqZIGS1vjAYLPMItpArQTzpcWQTTo1KZvU=&xsec_source=pc_feed",
   emailAddress: "gainubi@gmail.com"
 });
@@ -790,12 +791,14 @@ function sanitizeSiteSettings(raw) {
   const source = raw && typeof raw === "object" ? raw : {};
   const siteTitle = limitText(source.siteTitle, DEFAULT_SITE_SETTINGS.siteTitle, 30);
   const browserTitle = limitText(source.browserTitle, DEFAULT_SITE_SETTINGS.browserTitle, 80);
+  const siteBio = limitText(source.siteBio, DEFAULT_SITE_SETTINGS.siteBio, 120);
   const xiaohongshuUrl = normalizeExternalUrl(source.xiaohongshuUrl, DEFAULT_SITE_SETTINGS.xiaohongshuUrl);
   const emailAddress = normalizeEmailAddress(source.emailAddress, DEFAULT_SITE_SETTINGS.emailAddress);
 
   return {
     siteTitle,
     browserTitle,
+    siteBio,
     xiaohongshuUrl,
     emailAddress
   };

@@ -8,6 +8,7 @@
   var DEFAULT_SITE_SETTINGS = {
     siteTitle: "why me",
     browserTitle: "why me",
+    siteBio: "做有意思的事情。",
     xiaohongshuUrl: "https://www.xiaohongshu.com/user/profile/6720c690000000001c01b883?xsec_token=ABRs9q5J79rkqZIGS1vjAYLPMItpArQTzpcWQTTo1KZvU=&xsec_source=pc_feed",
     emailAddress: "gainubi@gmail.com"
   };
@@ -143,11 +144,13 @@
     settings = settings || {};
     var siteTitle = String(settings.siteTitle || "").trim() || DEFAULT_SITE_SETTINGS.siteTitle;
     var browserTitle = String(settings.browserTitle || "").trim() || DEFAULT_SITE_SETTINGS.browserTitle;
+    var siteBio = String(settings.siteBio || "").trim() || DEFAULT_SITE_SETTINGS.siteBio;
     var xiaohongshuUrl = String(settings.xiaohongshuUrl || "").trim() || DEFAULT_SITE_SETTINGS.xiaohongshuUrl;
     var emailAddress = String(settings.emailAddress || "").trim() || DEFAULT_SITE_SETTINGS.emailAddress;
     return {
       siteTitle: siteTitle.slice(0, 30),
       browserTitle: browserTitle.slice(0, 80),
+      siteBio: siteBio.slice(0, 120),
       xiaohongshuUrl: xiaohongshuUrl,
       emailAddress: emailAddress.slice(0, 320)
     };
@@ -213,6 +216,10 @@
         var compactTitleLength = Array.from(currentSiteSettings.siteTitle.replace(/\s+/g, "")).length;
         logo.classList.toggle("is-long", compactTitleLength > 3);
         logo.classList.toggle("is-very-long", compactTitleLength > 5);
+      }
+      var bio = document.getElementById("site-bio");
+      if (bio) {
+        bio.textContent = currentSiteSettings.siteBio || DEFAULT_SITE_SETTINGS.siteBio;
       }
       var rednoteLink = document.getElementById("connect-rednote-link");
       if (rednoteLink) {
@@ -838,10 +845,12 @@
     var siteSettingsFeedback = document.getElementById("site-settings-feedback");
     var siteTitleInput = document.getElementById("setting-site-title");
     var browserTitleInput = document.getElementById("setting-browser-title");
+    var siteBioInput = document.getElementById("setting-site-bio");
     var xiaohongshuUrlInput = document.getElementById("setting-xiaohongshu-url");
     var emailAddressInput = document.getElementById("setting-email-address");
     var settingsPreviewSiteTitle = document.getElementById("settings-preview-site-title");
     var settingsPreviewBrowserTitle = document.getElementById("settings-preview-browser-title");
+    var settingsPreviewSiteBio = document.getElementById("settings-preview-site-bio");
     var settingsPreviewRednoteLink = document.getElementById("settings-preview-rednote-link");
     var settingsPreviewEmailLink = document.getElementById("settings-preview-email-link");
     var adminPosts = [];
@@ -876,6 +885,7 @@
       return normalizeSiteSettings({
         siteTitle: (siteTitleInput && siteTitleInput.value) || "",
         browserTitle: (browserTitleInput && browserTitleInput.value) || "",
+        siteBio: (siteBioInput && siteBioInput.value) || "",
         xiaohongshuUrl: (xiaohongshuUrlInput && xiaohongshuUrlInput.value) || "",
         emailAddress: (emailAddressInput && emailAddressInput.value) || ""
       });
@@ -889,6 +899,9 @@
       if (settingsPreviewBrowserTitle) {
         settingsPreviewBrowserTitle.textContent = "浏览器标签：" + settings.browserTitle;
       }
+      if (settingsPreviewSiteBio) {
+        settingsPreviewSiteBio.textContent = "副标题：" + settings.siteBio;
+      }
       if (settingsPreviewRednoteLink) {
         settingsPreviewRednoteLink.textContent = "小红书：" + settings.xiaohongshuUrl;
       }
@@ -901,6 +914,7 @@
       adminSiteSettings = normalizeSiteSettings(settings);
       if (siteTitleInput) siteTitleInput.value = adminSiteSettings.siteTitle;
       if (browserTitleInput) browserTitleInput.value = adminSiteSettings.browserTitle;
+      if (siteBioInput) siteBioInput.value = adminSiteSettings.siteBio;
       if (xiaohongshuUrlInput) xiaohongshuUrlInput.value = adminSiteSettings.xiaohongshuUrl;
       if (emailAddressInput) emailAddressInput.value = adminSiteSettings.emailAddress;
       renderSiteSettingsPreview(adminSiteSettings);
