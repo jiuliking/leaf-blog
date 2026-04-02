@@ -374,7 +374,7 @@
     var audio = document.getElementById("forest-audio");
     var audioUnlocked = false;
     var fadeFrame = 0;
-    var audioBaseVolume = 0.36;
+    var audioBaseVolume = 0.52;
 
     function cancelAudioFade() {
       if (!fadeFrame) return;
