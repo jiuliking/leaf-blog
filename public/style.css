@@ -444,6 +444,7 @@ body.sunny .light-shaft {
   background: transparent;
   border-radius: 0;
   transition: opacity 800ms var(--ease-slow), transform 800ms var(--ease-slow);
+  cursor: pointer;
 }
 
 .entry-card.visible {
@@ -462,8 +463,14 @@ body.sunny .light-shaft {
   padding: 0;
 }
 
-.entry-link:hover .entry-title {
+.entry-card:hover .entry-title,
+.entry-card:focus-visible .entry-title {
   color: var(--accent);
+}
+
+.entry-card:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  outline-offset: 12px;
 }
 
 .entry-title {
@@ -487,6 +494,18 @@ body.sunny .light-shaft {
   color: color-mix(in srgb, var(--text) 84%, var(--mid));
   line-height: 1.95;
   max-width: 42em;
+}
+
+.entry-excerpt p,
+.entry-excerpt blockquote {
+  margin: 0;
+}
+
+.entry-excerpt p + p,
+.entry-excerpt p + blockquote,
+.entry-excerpt blockquote + p,
+.entry-excerpt blockquote + blockquote {
+  margin-top: 0.75em;
 }
 
 .entry-meta,

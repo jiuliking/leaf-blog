@@ -105,6 +105,10 @@
     return blocks.join("");
   }
 
+  function excerptMarkdownToHtml(markdown) {
+    return markdownToHtml(markdown || "").replace(/<img\b[^>]*>/g, "");
+  }
+
   function excerptFromContent(content) {
     var plain = String(content || "")
       .replace(/^>\s?/gm, "")
@@ -446,6 +450,25 @@
     });
   }
 
+  function bindEntryCards(selector) {
+    document.querySelectorAll(selector).forEach(function (entry) {
+      var href = entry.getAttribute("data-entry-href");
+      if (!href) return;
+
+      entry.addEventListener("click", function (event) {
+        if (event.target && event.target.closest("a, button, input, textarea, select, label")) return;
+        window.location.href = href;
+      });
+
+      entry.addEventListener("keydown", function (event) {
+        if (event.target !== entry) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        window.location.href = href;
+      });
+    });
+  }
+
   async function initHomePage() {
     var pageSize = 10;
     var params = new URLSearchParams(window.location.search);
@@ -522,20 +545,21 @@
       list.innerHTML = postsToRender.map(function (post) {
         var href = "./post.html?id=" + encodeURIComponent(post.id);
         return [
-          '<article class="entry-card">',
-          '  <a class="entry-link" href="' + href + '">',
+          '<article class="entry-card" tabindex="0" role="link" aria-label="查看文章《' + escapeHtml(post.title) + '》" data-entry-href="' + href + '">',
+          '  <div class="entry-link">',
           '    <h2 class="entry-title">' + escapeHtml(post.title) + "</h2>",
-          '    <p class="entry-excerpt">' + escapeHtml(post.excerpt || excerptFromContent(post.content || "")) + "</p>",
+          '    <div class="entry-excerpt">' + excerptMarkdownToHtml(post.excerpt || excerptFromContent(post.content || "")) + "</div>",
           '    <div class="entry-meta">',
           '      <span class="meta-chip">' + escapeHtml(formatDate(post.publishedAt)) + "</span>",
           "    </div>",
-          "  </a>",
+          "  </div>",
           "</article>"
         ].join("");
       }).join("");
 
       renderHomePagination();
       animateEntries(".entry-card");
+      bindEntryCards(".entry-card[data-entry-href]");
     }
 
     updateHomePageUrl(currentPage);
