@@ -700,7 +700,7 @@ function toApiPost(row) {
     id: row.id,
     slug: row.slug,
     title: row.title,
-    excerpt: row.excerpt,
+    excerpt: excerptFromContent(row.content || row.excerpt || ""),
     content: row.content,
     status: row.status,
     publishedAt: row.published_at,
@@ -739,7 +739,7 @@ function normalizePostRecord(raw) {
     id: String(raw.id || "").trim() || randomId(),
     slug,
     title,
-    excerpt: String(raw.excerpt || "").trim() || excerptFromContent(content),
+    excerpt: excerptFromContent(content),
     content,
     status: String(raw.status || "").trim() === "draft" ? "draft" : "published",
     published_at: publishedAt,
@@ -916,25 +916,64 @@ function buildSlug(value) {
 }
 
 function excerptFromContent(content) {
-  const plain = String(content || "")
-    .replace(/^>\s?/gm, "")
-    .replace(/\s+/g, " ")
+  const normalized = String(content || "")
+    .replace(/\r/g, "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s{0,3}>\s?/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/[*_~]/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  if (!plain) return "";
-  if (plain.length <= 90) return plain;
+  if (!normalized) return "";
 
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((part) => part.replace(/\n+/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  const candidate = paragraphs[0] || normalized.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+  if (!candidate) return "";
+
+  const maxLength = 110;
+  const sentenceMarks = ["。", "！", "？", ".", "!", "?"];
+  const trailingMarks = ['"', "'", "”", "’", ")", "）", "]", "】"];
   let sentenceEnd = -1;
-  for (const mark of ["。", "！", "？", ".", "!", "?"]) {
-    const index = plain.lastIndexOf(mark, 90);
-    if (index > sentenceEnd) sentenceEnd = index;
+
+  for (let i = 0; i < candidate.length; i += 1) {
+    if (!sentenceMarks.includes(candidate.charAt(i))) continue;
+    sentenceEnd = i;
+    while (sentenceEnd + 1 < candidate.length && trailingMarks.includes(candidate.charAt(sentenceEnd + 1))) {
+      sentenceEnd += 1;
+    }
+    break;
   }
 
-  if (sentenceEnd >= 24) {
-    return plain.slice(0, sentenceEnd + 1).trim();
+  if (sentenceEnd >= 0 && sentenceEnd < maxLength) {
+    const firstSentence = candidate.slice(0, sentenceEnd + 1).trim();
+    if (firstSentence) return firstSentence;
   }
 
-  return plain.slice(0, 90).trim();
+  if (candidate.length <= maxLength) return candidate;
+
+  let cutIndex = -1;
+  for (const mark of ["。", "！", "？", ".", "!", "?", "，", ",", "、", ";", "；", " "]) {
+    const index = candidate.lastIndexOf(mark, maxLength);
+    if (index > cutIndex) cutIndex = index;
+  }
+
+  if (cutIndex >= 24) {
+    return candidate.slice(0, cutIndex + (candidate[cutIndex] === " " ? 0 : 1)).trim();
+  }
+
+  return candidate.slice(0, maxLength).trim();
 }
 
 function extensionFromMime(mimeType, filename) {

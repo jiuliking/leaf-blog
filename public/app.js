@@ -109,26 +109,71 @@
     return markdownToHtml(markdown || "").replace(/<img\b[^>]*>/g, "");
   }
 
-  function excerptFromContent(content) {
-    var plain = String(content || "")
-      .replace(/^>\s?/gm, "")
-      .replace(/\s+/g, " ")
+  function stripMarkdownForExcerpt(content) {
+    return String(content || "")
+      .replace(/\r/g, "")
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "$1")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+      .replace(/^\s{0,3}>\s?/gm, "")
+      .replace(/^\s*[-*+]\s+/gm, "")
+      .replace(/^\s*\d+\.\s+/gm, "")
+      .replace(/[*_~]/g, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
       .trim();
-    var maxLength = 90;
-    if (plain.length <= maxLength) return plain;
+  }
 
+  function excerptFromContent(content) {
+    var normalized = stripMarkdownForExcerpt(content);
+    if (!normalized) return "";
+
+    var paragraphs = normalized
+      .split(/\n{2,}/)
+      .map(function (part) {
+        return part.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+      })
+      .filter(Boolean);
+
+    var candidate = paragraphs[0] || normalized.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+    if (!candidate) return "";
+
+    var maxLength = 110;
+    var sentenceMarks = ["。", "！", "？", ".", "!", "?"];
+    var trailingMarks = ['"', "'", "”", "’", ")", "）", "]", "】"];
     var sentenceEnd = -1;
-    var punctuation = ["。", "！", "？", ".", "!", "?"];
-    punctuation.forEach(function (mark) {
-      var index = plain.lastIndexOf(mark, maxLength);
-      if (index > sentenceEnd) sentenceEnd = index;
-    });
 
-    if (sentenceEnd >= 24) {
-      return plain.slice(0, sentenceEnd + 1).trim();
+    for (var i = 0; i < candidate.length; i += 1) {
+      if (sentenceMarks.indexOf(candidate.charAt(i)) === -1) continue;
+      sentenceEnd = i;
+      while (sentenceEnd + 1 < candidate.length && trailingMarks.indexOf(candidate.charAt(sentenceEnd + 1)) !== -1) {
+        sentenceEnd += 1;
+      }
+      break;
     }
 
-    return plain.slice(0, maxLength).trim();
+    if (sentenceEnd >= 0 && sentenceEnd < maxLength) {
+      var firstSentence = candidate.slice(0, sentenceEnd + 1).trim();
+      if (firstSentence) return firstSentence;
+    }
+
+    if (candidate.length <= maxLength) return candidate;
+
+    var breakpoints = ["。", "！", "？", ".", "!", "?", "，", ",", "、", ";", "；", " "];
+    var cutIndex = -1;
+    breakpoints.forEach(function (mark) {
+      var index = candidate.lastIndexOf(mark, maxLength);
+      if (index > cutIndex) cutIndex = index;
+    });
+
+    if (cutIndex >= 24) {
+      return candidate.slice(0, cutIndex + (candidate[cutIndex] === " " ? 0 : 1)).trim();
+    }
+
+    return candidate.slice(0, maxLength).trim();
   }
 
   function nowShanghaiIso() {
@@ -548,7 +593,7 @@
           '<article class="entry-card" tabindex="0" role="link" aria-label="查看文章《' + escapeHtml(post.title) + '》" data-entry-href="' + href + '">',
           '  <div class="entry-link">',
           '    <h2 class="entry-title">' + escapeHtml(post.title) + "</h2>",
-          '    <div class="entry-excerpt">' + excerptMarkdownToHtml(post.excerpt || excerptFromContent(post.content || "")) + "</div>",
+          '    <div class="entry-excerpt">' + excerptMarkdownToHtml(excerptFromContent(post.content || post.excerpt || "")) + "</div>",
           '    <div class="entry-meta">',
           '      <span class="meta-chip">' + escapeHtml(formatDate(post.publishedAt)) + "</span>",
           "    </div>",
@@ -606,12 +651,6 @@
       '<span class="meta-chip">' + escapeHtml(formatDate(data.post.publishedAt)) + "</span>"
     ].join("");
     document.getElementById("post-content").innerHTML = markdownToHtml(data.post.content || "");
-
-    if (isAdmin && form.author) {
-      form.author.value = "why me";
-      form.author.closest(".field-row").classList.add("hidden");
-      form.classList.add("author-reply-form");
-    }
 
     function sortCommentsByTime(items, direction) {
       return (items || []).slice().sort(function (a, b) {
@@ -679,9 +718,9 @@
           deleteBtn,
           '  </div>',
           '  <form class="comment-reply-form hidden" data-reply-form="' + escapeHtml(comment.id) + '">',
-          isAdmin ? "" : '    <div class="field-row"><label class="field-label" for="reply-author-' + escapeHtml(comment.id) + '">名字</label><input id="reply-author-' + escapeHtml(comment.id) + '" name="author" maxlength="24" placeholder="怎么称呼你"></div>',
-          '    <div class="field-row"><label class="field-label" for="reply-content-' + escapeHtml(comment.id) + '">回复</label><textarea id="reply-content-' + escapeHtml(comment.id) + '" name="content" rows="3" maxlength="600" placeholder="' + (isAdmin ? "以 why me 身份回复" : "说点什么") + '"></textarea></div>',
-          '    <div class="comment-reply-actions"><button class="button" type="submit">' + (isAdmin ? "发布回复" : "提交回复") + '</button><button class="button button-ghost" type="button" data-reply-cancel="' + escapeHtml(comment.id) + '">取消</button></div>',
+          '    <div class="field-row"><label class="field-label" for="reply-author-' + escapeHtml(comment.id) + '">名字</label><input id="reply-author-' + escapeHtml(comment.id) + '" name="author" maxlength="24" placeholder="怎么称呼你"></div>',
+          '    <div class="field-row"><label class="field-label" for="reply-content-' + escapeHtml(comment.id) + '">回复</label><textarea id="reply-content-' + escapeHtml(comment.id) + '" name="content" rows="3" maxlength="600" placeholder="说点什么"></textarea></div>',
+          '    <div class="comment-reply-actions"><button class="button" type="submit">提交回复</button><button class="button button-ghost" type="button" data-reply-cancel="' + escapeHtml(comment.id) + '">取消</button></div>',
           '    <div class="feedback"></div>',
           "  </form>",
           comment.replies && comment.replies.length ? '<div class="comment-children">' + renderCommentNodes(comment.replies, (depth || 0) + 1) + "</div>" : "",
@@ -735,8 +774,7 @@
             postId: data.post.id,
             slug: data.post.slug,
             parentId: replyForm.getAttribute("data-reply-form"),
-            token: getAdminToken(),
-            author: isAdmin ? "why me" : ((authorInput && authorInput.value) || "").trim(),
+            author: ((authorInput && authorInput.value) || "").trim(),
             content: ((contentInput && contentInput.value) || "").trim()
           };
 
@@ -783,8 +821,7 @@
       var payload = {
         postId: data.post.id,
         slug: data.post.slug,
-        token: getAdminToken(),
-        author: isAdmin ? "why me" : (form.author.value || "").trim(),
+        author: (form.author.value || "").trim(),
         content: (form.content.value || "").trim()
       };
 
@@ -802,7 +839,6 @@
         var result = await callApi("createComment", payload);
         await reloadComments();
         form.reset();
-        if (isAdmin && form.author) form.author.value = "why me";
         setFeedback(feedback, (result && result.message) || "留言已提交，已显示在下方。", "success");
       } catch (error) {
         setFeedback(feedback, error.message || "留言提交失败", "error");
@@ -1016,7 +1052,7 @@
           '<article class="admin-item">',
           '  <div class="admin-item-title"><a class="admin-post-link" href="./post.html?id=' + escapeHtml(post.id) + '" target="_blank">' + escapeHtml(post.title) + "</a></div>",
           '  <div class="admin-meta">' + escapeHtml(formatDate(post.publishedAt || post.updatedAt)) + "</div>",
-          '  <div class="admin-item-excerpt">' + escapeHtml(post.excerpt || excerptFromContent(post.content || "")) + "</div>",
+          '  <div class="admin-item-excerpt">' + escapeHtml(excerptFromContent(post.content || post.excerpt || "")) + "</div>",
           '  <div class="admin-item-actions">',
           '    <button class="button button-secondary" type="button" data-edit-post="' + escapeHtml(post.id) + '">编辑</button>',
           '    <button class="button button-danger" type="button" data-delete-post="' + escapeHtml(post.id) + '">删除</button>',
